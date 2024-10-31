@@ -7,6 +7,14 @@ Class {
 }
 
 { #category : 'tests' }
+PjAnnouncementTest >> testAnnouncementSet [
+
+	| set |
+	set := self evalBlock: [ Announcement , Announcement ].
+	self assert: set jsClassName equals: AnnouncementSet name
+]
+
+{ #category : 'tests' }
 PjAnnouncementTest >> testBasicAnnouncement [
 
 	self assertEquivalent: [
