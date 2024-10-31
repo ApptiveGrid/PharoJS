@@ -76,8 +76,8 @@ PjOrderedCollectionTest >> testSerialization [
 { #category : 'tests' }
 PjOrderedCollectionTest >> testWith [
 	collection := self evalBlock: [ OrderedCollection with: 1 ].
-	self assert: collection jsClassName equals: OrderedCollection name.
+	self assert: collection jsClassName equals: OrderedCollection javascriptPlaceholder name.
 	collection := self evalBlock: [ OrderedCollection with: 1 with: 1].
-	self assert: collection jsClassName equals: OrderedCollection name.
+	self assert: collection jsClassName equals: OrderedCollection javascriptPlaceholder name.
 	
 ]
