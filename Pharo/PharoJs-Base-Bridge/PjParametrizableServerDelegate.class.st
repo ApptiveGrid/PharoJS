@@ -103,7 +103,7 @@ PjParametrizableServerDelegate >> html: aString [
 PjParametrizableServerDelegate >> initialize [
 
 	super initialize.
-	fingerPrint := UUIDGenerator next asString
+	fingerPrint := UUID new asString
 ]
 
 { #category : 'accessing' }
