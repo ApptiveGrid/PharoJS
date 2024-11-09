@@ -329,6 +329,13 @@ PjBridgeServer >> printOn: ws [
 		ifNotNil: [ :znSrv | znSrv printOn: ws ]
 ]
 
+{ #category : 'accessing' }
+PjBridgeServer >> registerChildProcess [
+
+	self childProcesses add: Processor activeProcess.
+
+]
+
 { #category : 'websocket' }
 PjBridgeServer >> safelyHandleMessage: aMessage forSocket: aWebSocket [
 
@@ -374,9 +381,7 @@ PjBridgeServer >> startOnPort: aPort [
 PjBridgeServer >> stop [
 
 	self znServer ifNotNil: [ :srv | srv stop ].
-	self childProcesses do: [ :each | each terminate ].
-	childProcesses := nil.
-	Smalltalk garbageCollect
+	self terminateChildProcesses
 ]
 
 { #category : 'accessing' }
@@ -384,6 +389,14 @@ PjBridgeServer >> tearDown [
 
 	self stop.
 	self bridge: nil
+]
+
+{ #category : 'stop' }
+PjBridgeServer >> terminateChildProcesses [
+
+	self childProcesses do: [ :each | each terminate ].
+	childProcesses := nil.
+	Smalltalk garbageCollect
 ]
 
 { #category : 'accessing' }
@@ -415,7 +428,7 @@ PjBridgeServer >> urlString [
 { #category : 'accessing' }
 PjBridgeServer >> value: aWebSocket [
 
-	self childProcesses add: Processor activeProcess.
+	self registerChildProcess.
 	[
 	self webSocket: aWebSocket.
 	aWebSocket runWith: [ :aMessage |
