@@ -66,3 +66,18 @@ PjOrderedCollectionTest >> testRemoveAll [
 	collection removeAll.
 	self assert: collection isEmpty.
 ]
+
+{ #category : 'tests' }
+PjOrderedCollectionTest >> testSerialization [
+
+	self assertEquivalent: [ OrderedCollection new asPhxJsonString ]
+]
+
+{ #category : 'tests' }
+PjOrderedCollectionTest >> testWith [
+	collection := self evalBlock: [ OrderedCollection with: 1 ].
+	self assert: collection jsClassName equals: OrderedCollection javascriptPlaceholder name.
+	collection := self evalBlock: [ OrderedCollection with: 1 with: 1].
+	self assert: collection jsClassName equals: OrderedCollection javascriptPlaceholder name.
+	
+]
