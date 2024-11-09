@@ -474,7 +474,7 @@ PjBridge >> proxies [
 PjBridge >> removeFinalizeFor: proxy ifAbsent: aBlock [
 
 	^ [ self finalizationRegistry remove: proxy ifAbsent: aBlock ]
-		  on: PjBridgeDisconnectedError
+		  on: Error
 		  do: aBlock 
 ]
 
