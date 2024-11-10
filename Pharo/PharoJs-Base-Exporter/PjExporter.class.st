@@ -619,7 +619,8 @@ PjExporter >> writeJsCode [
 			job
 				title: baseTitle , association value;
 				progress: index/stepAssociations size.
-			self perform: association key.] ] asJob run
+			self perform: association key.
+			300 milliseconds wait] ] asJob run
 ]
 
 { #category : 'writing' }
