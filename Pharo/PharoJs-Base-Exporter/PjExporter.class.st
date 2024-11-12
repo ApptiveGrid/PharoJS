@@ -606,21 +606,23 @@ PjExporter >> writeJsCode [
 
 	| baseTitle stepAssociations |
 	baseTitle := self appClass name , ' Export: '.
-	stepAssociations := { 
-		(#beforeExportApp -> 'Performing Before Export Action').
-		(#writeJsCoreAndBootstrap -> 'Writing JS Core and Bootstrap Code').
-		(#writeNonBootstrapClasses -> 'Writing Remaining Classes').
-		(#writeLaunchCode -> 'Writing Launch Code').
-		(#afterExportApp -> 'Performing After Export Action')  }.
+	stepAssociations := {
+		                    (#beforeExportApp
+		                     -> 'Performing Before Export Action').
+		                    (#writeJsCoreAndBootstrap
+		                     -> 'Writing JS Core and Bootstrap Code').
+		                    (#writeNonBootstrapClasses
+		                     -> 'Writing Remaining Classes').
+		                    (#writeLaunchCode -> 'Writing Launch Code').
+		                    (#afterExportApp
+		                     -> 'Performing After Export Action') }.
 	[ :job |
 	job title: baseTitle.
-	stepAssociations
-		withIndexDo: [ :association :index |
-			job
-				title: baseTitle , association value;
-				progress: index/stepAssociations size.
-			self perform: association key.
-			300 milliseconds wait] ] asJob run
+	stepAssociations withIndexDo: [ :association :index |
+		job
+			title: baseTitle , association value;
+			progress: index / stepAssociations size.
+		self perform: association key ] ] asJob run
 ]
 
 { #category : 'writing' }
