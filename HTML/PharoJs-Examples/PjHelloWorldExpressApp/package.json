@@ -9,7 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.20.2",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "serve-static": "^1.16.2",
     "ws": "^8.18.0"
   },
