@@ -220,14 +220,11 @@ PjApplication class >> writeEnsureNpmPackage: packageName on: str [
 ]
 
 { #category : 'modules' }
-PjApplication >> modulesManager [
-	^PjNodeModulesManager default
-]
+PjApplication >> require: jsModuleName [
+	"Loads the JS module if not in cache see https://iifx.dev/en/articles/43105256 "
+	"Note: Smalltalk global is transpiled to globalThis."
 
-{ #category : 'modules' }
-PjApplication >> require: aString [
-
-	^ self modulesManager require: aString
+	^ Smalltalk require: jsModuleName
 ]
 
 { #category : 'start-stop' }
