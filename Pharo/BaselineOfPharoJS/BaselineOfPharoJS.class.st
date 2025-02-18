@@ -148,5 +148,5 @@ BaselineOfPharoJS >> prerequisites: spec [
 	"Prerequisite Packages"
 	spec
 		package: 'Zinc-WebSocket-Core'
-		with: [ spec repository: 'github://svenvc/zinc' ]
+		with: [ spec repository: 'github://svenvc/zinc/repository' ]
 ]
