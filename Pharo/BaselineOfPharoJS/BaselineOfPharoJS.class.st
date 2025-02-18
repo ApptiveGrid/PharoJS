@@ -138,9 +138,9 @@ BaselineOfPharoJS >> prerequisites: spec [
 
 	spec
 		baseline: 'PharoExtra'
-		with: [ spec repository: 'github://bouraqadi/PharoMisc:pharo12' ];
+		with: [ spec repository: 'github://bouraqadi/PharoMisc:pharo12/Pharo' ];
 		baseline: 'LightweightObserver'
-		with: [ spec repository: 'github://bouraqadi/PharoMisc:pharo12' ];
+		with: [ spec repository: 'github://bouraqadi/PharoMisc:pharo12/Pharo' ];
 		baseline: 'Seaside3'
 		with: [
 			spec repository: 'github://SeasideSt/Seaside:master/repository' ].
