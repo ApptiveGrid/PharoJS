@@ -14,7 +14,7 @@ Class {
 		'childProcesses'
 	],
 	#classVars : [
-		'CurrentUsablePortNumber'
+		'CurrentPortNumber'
 	],
 	#category : 'PharoJs-Base-Bridge-Kernel',
 	#package : 'PharoJs-Base-Bridge',
@@ -22,28 +22,37 @@ Class {
 }
 
 { #category : 'accessing' }
-PjBridgeServer class >> currentUsablePortNumber [
+PjBridgeServer class >> currentPortNumber [
 
-	CurrentUsablePortNumber ifNil: [ 
-		CurrentUsablePortNumber := self minPortNumber ].
-	^ CurrentUsablePortNumber
+	CurrentPortNumber ifNil: [ 
+		CurrentPortNumber := self minPortNumber ].
+	^ CurrentPortNumber
 ]
 
 { #category : 'accessing' }
-PjBridgeServer class >> currentUsablePortNumber: aNumber [
+PjBridgeServer class >> currentPortNumber: aNumber [
 
-	CurrentUsablePortNumber := aNumber
+	aNumber < self minPortNumber ifTrue: [ ^self resetPortNumber ].
+	CurrentPortNumber := aNumber > self maxPortNumber 
+		ifTrue: [ self minPortNumber ]
+		ifFalse: [self validPortNumberFrom: aNumber ] 
+	
 ]
 
 { #category : 'accessing' }
-PjBridgeServer class >> incrementCurrentUsablePortNumber [
+PjBridgeServer class >> forbiddenPortNumbers [ 
+	"Those are ports usually used for other puprposes and thus [blocked by web browsers](https://kb.diadem.in/blocked-ports-on-new-web-browsers_1432.html).
+	We ensure that the minPortNumber is high enough to skip the first set of block ports.
+	The minPortNumber and maxPortNumber are valid (unblocked)."
+	
+	^#(1719 1720 1721 1722 1723 2049 3659 4045 5060 5062 6000)
+]
 
-	| p |
-	p := self currentUsablePortNumber
-		     ifNotNil: [ :cp | cp + 1 ]
-		     ifNil: [ self minPortNumber ].
-	p > self maxPortNumber ifTrue: [ p := self minPortNumber ].
-	self currentUsablePortNumber: p
+{ #category : 'accessing' }
+PjBridgeServer class >> incrementCurrentPortNumber [
+
+	self currentPortNumber: self currentPortNumber  + 1.
+
 ]
 
 { #category : 'accessing' }
@@ -54,8 +63,23 @@ PjBridgeServer class >> maxPortNumber [
 
 { #category : 'accessing' }
 PjBridgeServer class >> minPortNumber [
-
+	"We skip the first forbidden port numbers.
+	Others are defined by #forbiddenPortNUmbers"
+	
 	^ 1024
+]
+
+{ #category : 'accessing' }
+PjBridgeServer class >> resetPortNumber [
+	CurrentPortNumber := nil
+]
+
+{ #category : 'accessing' }
+PjBridgeServer class >> validPortNumberFrom: aNumber [
+
+	(self forbiddenPortNumbers includes: aNumber) ifFalse: [ ^aNumber ].
+	^self validPortNumberFrom: aNumber + 1.
+
 ]
 
 { #category : 'accessing' }
@@ -194,8 +218,8 @@ PjBridgeServer >> html: anObject [
 ]
 
 { #category : 'start' }
-PjBridgeServer >> incrementCurrentUsablePortNumber [
-	self class incrementCurrentUsablePortNumber
+PjBridgeServer >> incrementCurrentPortNumber [
+	self class incrementCurrentPortNumber
 ]
 
 { #category : 'initialization' }
@@ -352,19 +376,19 @@ PjBridgeServer >> start [
 	"We change the current usable port number before starting to avoid collision with potentially other bridge servers. This happens sometimes in tests before bridges are garbageCollected"
 	| attempts |
 	self isStarted ifTrue: [ ^ self ].
-	self incrementCurrentUsablePortNumber.
+	self incrementCurrentPortNumber.
 	attempts := 1.
 	[
 	self startOnCurrentUsablePortNumber.
 	self isStartedWithinTimeout ] whileFalse: [
 		attempts := attempts + 1.
-		self incrementCurrentUsablePortNumber ]
+		self incrementCurrentPortNumber ]
 ]
 
 { #category : 'start' }
 PjBridgeServer >> startOnCurrentUsablePortNumber [
 
-	self startOnPort: self class currentUsablePortNumber
+	self startOnPort: self class currentPortNumber
 ]
 
 { #category : 'start' }

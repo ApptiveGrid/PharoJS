@@ -51,7 +51,8 @@ Class {
 		'client',
 		'shouldStartJsInterpreter',
 		'monitor',
-		'incomingMessageFrames'
+		'incomingMessageFrames',
+		'hotCodeUpdater'
 	],
 	#category : 'PharoJs-Base-Bridge-Kernel',
 	#package : 'PharoJs-Base-Bridge',
@@ -71,6 +72,22 @@ PjBridge class >> bridgeForAppClass: appClass client: bridgeClient [
 		  initializeWithClient: bridgeClient;
 		  initializeWithAppClass: appClass;
 		  yourself
+]
+
+{ #category : 'bridge handling' }
+PjBridge class >> cleanUpProcesses [
+
+	Smalltalk garbageCollect.
+	Process allInstances
+		select: [ :each | each priority = 30 ]
+		thenDo: #terminate.
+
+	Smalltalk garbageCollect.
+	Process allInstances
+		select: [ :each |
+			each name beginsWith: 'ZnMultiThreadedServer HTTP' ]
+		thenDo: #terminate.
+	Smalltalk garbageCollect
 ]
 
 { #category : 'accessing' }
@@ -125,12 +142,20 @@ PjBridge class >> startOn: portNumber title: title [
 
 { #category : 'bridge handling' }
 PjBridge class >> stop [
+
 	<script>
-	
-	self soleBridge ifNotNil: [ 
-		self soleBridge stop.
-		self soleBridge: nil.
-		Smalltalk garbageCollect ]
+	self soleBridge ifNil: [ ^ self ].
+	self soleBridge stop.
+	self soleBridge: nil
+]
+
+{ #category : 'bridge handling' }
+PjBridge class >> stopAndCleanUp [
+
+	<script>
+	self stop.
+	self cleanUpProcesses.
+	PjHotCodeUpdater allInstancesDo: #unsubscribe 
 ]
 
 { #category : 'actions' }
@@ -328,6 +353,11 @@ PjBridge >> exporter [
 ]
 
 { #category : 'accessing' }
+PjBridge >> hotCodeUpdater [
+	^hotCodeUpdater 
+]
+
+{ #category : 'accessing' }
 PjBridge >> incomingMessages [
 
 	^ incomingMessageFrames last
@@ -354,7 +384,8 @@ PjBridge >> initialize [
 			 receiver: self;
 			 selector: #stop;
 			 yourself).
-	monitor := Monitor new
+	monitor := Monitor new.
+	hotCodeUpdater := PjHotCodeUpdater bridge: self
 ]
 
 { #category : 'accessing' }
@@ -379,7 +410,8 @@ PjBridge >> isClientIdReceived [
 
 { #category : 'public' }
 PjBridge >> isConnected [
-
+	
+	self server ifNil: [ ^false ].
 	self webSocket ifNil: [ ^ false ].
 	^ self webSocket isConnected
 ]
@@ -425,10 +457,15 @@ PjBridge >> loadClass: aClass [
 	^ aClass
 ]
 
+{ #category : 'accessing' }
+PjBridge >> maxMillisecondsToWaitForResponse [
+	^2000
+]
+
 { #category : 'actions' }
 PjBridge >> minimumStepDuration [
 
-	^ 25 milliSeconds
+	^ 50 milliSeconds
 ]
 
 { #category : 'actions' }
@@ -481,6 +518,12 @@ PjBridge >> removeFinalizeFor: proxy ifAbsent: aBlock [
 { #category : 'public' }
 PjBridge >> resetClient [
 
+	self resetClientRetries: 1
+]
+
+{ #category : 'public' }
+PjBridge >> resetClientRetries: retryCount [
+
 	| oldWebSocket |
 	oldWebSocket := self webSocket.
 	self client reset.
@@ -491,7 +534,9 @@ PjBridge >> resetClient [
 				ifTrue: [ oldWebSocket close ] ]
 		onTimeOutDo: [ self error: 'Client did NOT reconnect!' ]
 		timeOutDuration: self client startTimeout.
-	self waitForClientToStart
+	[self waitForClientToStart] on: Error do: [ : ex |
+		retryCount = 0 ifTrue: [ ex pass ]. 
+		self resetClientRetries: retryCount - 1 ]
 ]
 
 { #category : 'initialization' }
@@ -499,15 +544,14 @@ PjBridge >> resetProxiesImmediately [
 	"Leaving this to garbage collection leads to inpredictable results,
 	because finalizations might occur in a next (reloaded) client JS session"
 
-	| finalizer |
-	self proxies do: [ : proxy |
-		finalizer := self removeFinalizeFor: proxy ifAbsent: [nil].
-		finalizer ifNotNil: [ "finlizer finalize""For now, NOT executing the finalizations (which sends delete proxy messages to the client), because of unknown problems.
-					This should be made synchronous anyway by waiting for acknowledgement from client.
-					For now, removing them (inactivating) is enough, we only execute this method when we no further need the client."
-			 ]].
-	proxies := nil
-	"Smalltalk garbageCollect. "
+	| finalizer oldProxies |
+	[Smalltalk garbageCollect.
+	oldProxies := self proxies.
+	proxies := nil.
+	oldProxies do: [ : proxy |
+			finalizer := self removeFinalizeFor: proxy ifAbsent: [nil].
+			finalizer ifNotNil: [finalizer finalize]
+		] ] forkAt: Processor timingPriority 
 ]
 
 { #category : 'public' }
@@ -534,10 +578,13 @@ PjBridge >> sendMessageAndWaitForResponse: msg [
 
 	| responseMsg resultForSentMessage |
 	self sendMessage: msg.
-	monitor critical: [ 
-		monitor waitUntil: [ 
-			responseMsg := self incomingResponseMessageForSentMessage: msg.
-			responseMsg notNil ] ].
+	monitor critical: [
+		monitor
+			waitUntil: [
+				responseMsg := self incomingResponseMessageForSentMessage: msg.
+				responseMsg notNil ]
+			for: nil
+			maxMilliseconds: self maxMillisecondsToWaitForResponse ].
 	resultForSentMessage := self valueFromResponseMessage: responseMsg.
 	self executeCallbacksUntilDepletion.
 	^ resultForSentMessage

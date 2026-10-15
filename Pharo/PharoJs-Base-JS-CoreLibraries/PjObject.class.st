@@ -10,11 +10,11 @@ Class {
 	#superclass : 'Object',
 	#traits : 'PjTKernelClass',
 	#classTraits : 'PjTKernelClass classTrait',
+	#classVars : [
+		'LastIdentityHash'
+	],
 	#pools : [
 		'PjDomGlobals'
-	],
-	#classInstVars : [
-		'nextIdentityHash'
 	],
 	#category : 'PharoJs-Base-JS-CoreLibraries-Kernel',
 	#package : 'PharoJs-Base-JS-CoreLibraries',
@@ -76,7 +76,9 @@ PjObject class >> keysDo_jsGenerator: transpiler [
 
 { #category : 'comparing' }
 PjObject class >> nextIdentityHash [
-	^ nextIdentityHash := (nextIdentityHash ifNil: [12345]) hashMultiply
+
+	^ LastIdentityHash := (LastIdentityHash ifNil: [
+		                       Time millisecondClockValue ]) hashMultiply
 ]
 
 { #category : 'dictionary emulation' }
@@ -192,6 +194,13 @@ PjObject >> flag: aSymbol [
 ]
 
 { #category : 'reflection' }
+PjObject >> forceInstVarNamed: propertyName put: newValue [
+	self makeWritableInstVarNamed: propertyName.
+	self instVarNamed: propertyName put: newValue 
+	
+]
+
+{ #category : 'reflection' }
 PjObject >> halt [
 	<javascript: 'debugger'>
 ]
@@ -227,17 +236,17 @@ PjObject >> includesKey: key [
 PjObject >> initialize [
 ]
 
-{ #category : 'introspection' }
+{ #category : 'reflection' }
 PjObject >> instVarNamed: aString [
 	^ self js_at: aString
 ]
 
-{ #category : 'introspection' }
+{ #category : 'reflection' }
 PjObject >> instVarNamed: aString put: anObject [
 	^ self js_at: aString put: anObject
 ]
 
-{ #category : 'introspection' }
+{ #category : 'reflection' }
 PjObject >> instVarNamed: aString putHidden: anObject [
 	<javascript: '
 	try{Object.defineProperty(this,aString,{value:anObject,writable:true})}catch(e){}
@@ -289,6 +298,15 @@ PjObject >> keysAndValuesDo: aBlock [
 { #category : 'dictionary emulation' }
 PjObject >> keysDo: aBlock [
 	<jsGenerator: #keysDo_jsGenerator:>
+]
+
+{ #category : 'reflection' }
+PjObject >> makeWritableInstVarNamed: propertyName [
+
+	Object
+		js_defineProperty: self
+		named: propertyName
+		descriptor: { (#writable -> true) } asJsObject
 ]
 
 { #category : 'message performing' }
@@ -416,6 +434,11 @@ PjObject >> value [
 { #category : 'dictionary emulation' }
 PjObject >> valuesDo: aBlock [
 	<jsGenerator: #valuesDo_jsGenerator:>
+]
+
+{ #category : 'printing' }
+PjObject >> writeLog: anObject [
+	console log: anObject
 ]
 
 { #category : 'accessing' }

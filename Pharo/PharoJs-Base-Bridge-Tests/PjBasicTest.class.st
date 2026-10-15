@@ -300,6 +300,67 @@ PjBasicTest >> testIdentity [
 ]
 
 { #category : 'tests' }
+PjBasicTest >> testIfFalseGreaterThanOrEqualToSameValue [
+
+	| bugClass expectedResponse jsClass jsInstance |
+	bugClass := classFactory newClass.
+	expectedResponse := 'Expected Response!'.
+	bugClass compile: 'bugDemo
+    1 >= 1 ifFalse: [ ^''Unexpected response''].
+	^''' , expectedResponse , ''''.
+	self bridge loadClass: bugClass.
+	jsClass := self bridge jsGlobalAt: bugClass name.
+	jsInstance := jsClass new.
+	self assert: jsInstance bugDemo equals: expectedResponse
+]
+
+{ #category : 'tests' }
+PjBasicTest >> testIfFalseGreaterThanSameValue [
+
+	| bugClass expectedResponse jsClass jsInstance |
+	bugClass := classFactory newClass.
+	expectedResponse := 'Expected Response!'.
+	bugClass compile: 'bugDemo
+    1 > 1 ifFalse: [ ^''', expectedResponse ,''' ].
+    ^''Unexpected response'''.
+	self bridge loadClass: bugClass.	
+	jsClass := self bridge jsGlobalAt: bugClass name.
+	jsInstance := jsClass new.
+	self assert: jsInstance bugDemo equals: expectedResponse.
+
+]
+
+{ #category : 'tests' }
+PjBasicTest >> testIfFalseLessThanOrEqualToSameValue [
+
+	| bugClass expectedResponse jsClass jsInstance |
+	bugClass := classFactory newClass.
+	expectedResponse := 'Expected Response!'.
+	bugClass compile: 'bugDemo
+    1 <= 1 ifFalse: [ ^''Unexpected response''].
+	^''' , expectedResponse , ''''.
+	self bridge loadClass: bugClass.
+	jsClass := self bridge jsGlobalAt: bugClass name.
+	jsInstance := jsClass new.
+	self assert: jsInstance bugDemo equals: expectedResponse
+]
+
+{ #category : 'tests' }
+PjBasicTest >> testIfFalseLessThanSameValue [
+
+	| bugClass expectedResponse jsClass jsInstance |
+	bugClass := classFactory newClass.
+	expectedResponse := 'Expected Response!'.
+	bugClass compile: 'bugDemo
+    1 < 1 ifFalse: [ ^''' , expectedResponse , ''' ].
+    ^''Unexpected response'''.
+	self bridge loadClass: bugClass.
+	jsClass := self bridge jsGlobalAt: bugClass name.
+	jsInstance := jsClass new.
+	self assert: jsInstance bugDemo equals: expectedResponse
+]
+
+{ #category : 'tests' }
 PjBasicTest >> testIfNilIfNotNil [
 
 	self assertEquivalent: [ nil ifNil: [ 1 ] ].
@@ -325,6 +386,21 @@ PjBasicTest >> testIfTrueIfFalse [
 	self assertEquivalent: [ false ifTrue: [1] ifFalse: [2] ].
 	self assertEquivalent: [ true ifFalse: [2] ifTrue: [1] ].
 	self assertEquivalent: [ false ifFalse: [2] ifTrue: [1] ] 
+]
+
+{ #category : 'tests' }
+PjBasicTest >> testInstancesOfDifferentClassesHaveDifferentHashes [
+
+	self assertEquivalent: [
+		| x y |
+		x := PjCounter new.
+		y := PjUser new.
+		x hash ~= y hash ].
+	self assertEquivalent: [
+		| x y |
+		x := PjCounter.
+		y := PjUser.
+		x hash ~= y hash ]
 ]
 
 { #category : 'tests' }
@@ -465,6 +541,26 @@ PjBasicTest >> testNumber [
 	self assertEquivalent: [ x negated * x ]. " -Infinity "
 	self assertEquivalent: [ x * x * 0 ]. " NaN "
 	self assertEquivalent: [ (x * x * 0) isNaN ]. " NaN "
+]
+
+{ #category : 'tests' }
+PjBasicTest >> testRegexMatchesIn [
+
+	self assertEquivalent: [ ('a' asRegex matchesIn: '123') asArray ].
+	self assertEquivalent: [ ('a' asRegex matchesIn: 'a123a') asArray ]
+]
+
+{ #category : 'tests' }
+PjBasicTest >> testRegexMatchesInDo [
+
+	self assertEquivalent: [ |count|
+		count := 0.
+		'a' asRegex matchesIn: '123' do: [: each | count := count + 1 ].
+		count].
+	self assertEquivalent: [ |count|
+		count := 0.
+		'a' asRegex matchesIn: 'a123a' do: [: each | count := count + 1 ].
+		count]
 ]
 
 { #category : 'tests' }
